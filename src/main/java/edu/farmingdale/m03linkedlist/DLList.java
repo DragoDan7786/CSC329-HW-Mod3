@@ -40,6 +40,7 @@ public class DLList<T extends Comparable<T>> implements SortTestable<T>, Iterabl
         dummy = new Node<T>();
         dummy.next = dummy;
         dummy.previous = dummy;
+        n = 0;
     }
 
     /**
@@ -107,11 +108,12 @@ public class DLList<T extends Comparable<T>> implements SortTestable<T>, Iterabl
     public Iterator<T> iterator() {
         Iterator<T> iterRv; // anon inner class iterator
         iterRv = new Iterator<T>() {
-            Node<T> current = dummy;
+            Node<T> current = dummy.next;
+            int numItems = n;
 
             @Override
             public boolean hasNext() {
-                return dummy.next != dummy;
+                return numItems > 0;
             } // hasNext()
 
             @Override
@@ -121,6 +123,7 @@ public class DLList<T extends Comparable<T>> implements SortTestable<T>, Iterabl
                 }
                 T theData = current.data;
                 current = current.next;
+                numItems --;
                 return theData;
             } // next()
 
@@ -180,6 +183,7 @@ public class DLList<T extends Comparable<T>> implements SortTestable<T>, Iterabl
             if (current.data == findMe) {
                 indexFound = index;
                 found = true;
+                current = current.next;
                 index++;
             } else {
                 current = current.next;
@@ -204,6 +208,7 @@ public class DLList<T extends Comparable<T>> implements SortTestable<T>, Iterabl
             if (current.data == removeMe) {
                 setNext(current.previous, current.next);
                 setPrevious(current.next, current.previous);
+                n--;
                 return true;
             } else {
                 current = current.next;
@@ -222,7 +227,7 @@ public class DLList<T extends Comparable<T>> implements SortTestable<T>, Iterabl
     public T getItemAt(int position) {
         Node<T> current = dummy.next;
         int i = 0;
-        while (i < position && current.next == dummy) {
+        while (i < position && current.next != dummy) {
             current = current.next;
             i++;
         }
@@ -243,7 +248,7 @@ public class DLList<T extends Comparable<T>> implements SortTestable<T>, Iterabl
     public T setDataInNodeAt(int position, T newData) {
         Node<T> current = dummy.next;
         int i = 0;
-        while (i < position && current.next == dummy) {
+        while (i < position && current.next != dummy) {
             current = current.next;
             i++;
         }
@@ -279,17 +284,18 @@ public class DLList<T extends Comparable<T>> implements SortTestable<T>, Iterabl
     public boolean addAt(int position, T addMe) {
          Node<T> current = dummy.next;
         int i = 0;
-        while (i < position && current.next == dummy) {
+        while (i < position && current.next != dummy) {
             current = current.next;
             i++;
         }
         if (i == position) {
             Node<T> theNode = new Node();
             theNode.data = addMe;
-            setNext(theNode , current.next);
-            setPrevious(current.next , theNode);
-            setNext(current , theNode);
-            setPrevious(theNode , current);
+            setNext(theNode , current);
+            setPrevious(theNode, current.previous);
+            setNext(current.previous , theNode);
+            setPrevious(current , theNode);
+            n++;
             
             return true;
         } else {
@@ -315,7 +321,7 @@ public class DLList<T extends Comparable<T>> implements SortTestable<T>, Iterabl
             T theData = current.data;
             setNext(current.previous , current.next);
             setPrevious(current.next , current.previous);
-            
+            n--;
             return theData;
         } else {
             throw new NoSuchElementException();
@@ -331,6 +337,7 @@ public class DLList<T extends Comparable<T>> implements SortTestable<T>, Iterabl
         setPrevious(theNode, dummy.previous);
         setNext(dummy.previous , theNode);
         setPrevious(dummy , theNode);
+        n++;
     }
 
     /**
@@ -345,6 +352,7 @@ public class DLList<T extends Comparable<T>> implements SortTestable<T>, Iterabl
         setPrevious(dummy.next , theNode);
         setNext(dummy , theNode);
         setPrevious(theNode , dummy);
+        n++;
     }
 
     /**
@@ -386,12 +394,24 @@ public class DLList<T extends Comparable<T>> implements SortTestable<T>, Iterabl
      * @return true iff both us and the param contain the same data in the same
      * order
      */
-    public boolean sameContentsAs(DLList<T> otherDll) {
-        if (this == otherDll) {
+    public boolean sameContentsAs(DLList<T> compareWith) {
+        if (this == compareWith) {
             return true;
         }
         // you need to write this
-        return false;
+        Iterator<T> myIterator = iterator();
+        Iterator<T> cwIterator = compareWith.iterator();
+        
+         while (myIterator.hasNext() && cwIterator.hasNext()) {
+            T cwElement = cwIterator.next();
+            T llElement = myIterator.next();
+            if (!cwElement.equals(llElement)) {
+                return false;
+            }
+        }
+       
+        return true;
+       
     }
 
     /**
